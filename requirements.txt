@@ -7,3 +7,4 @@ torch
 transformers
 typing-extensions
 fugashi
+unidic-lite
