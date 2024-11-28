@@ -11,7 +11,7 @@ from typing import Dict, Tuple, Optional
 import matplotlib.font_manager as fm
 
 # GitHub ActionsとGitHub Codespaces用の環境変数取得
-openai.api_key = os.getenv('OPENAI_API_KEY') or st.secrets.get("OPENAI_API_KEY", "")
+openai.api_key = 'sk-xxxxx'
 
 EMOTION_NAMES = ['Joy', 'Sadness', 'Anticipation', 'Surprise', 'Anger', 'Fear', 'Disgust', 'Trust']
 
@@ -53,15 +53,12 @@ def analyze_emotion(text: str, model, tokenizer, show_fig: bool = False) -> Tupl
         return {}, None
 
 def reverse_emotion_with_gpt(text: str) -> str:
-    """
-    OpenAI GPT-4を使用してテキストの感情を反転させる関数
-    """
     if not openai.api_key:
         raise ValueError("OpenAI APIキーが設定されていません")
     
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "あなたは、与えられたテキストの感情を完全に逆転させる特殊な翻訳者です。ポジティブな表現をネガティブに、ネガティブな表現をポジティブに変換してください。文脈や微妙なニュアンスも考慮して、元のテキストの感情を正反対に変えてください。"},
                 {"role": "user", "content": text}
@@ -72,6 +69,20 @@ def reverse_emotion_with_gpt(text: str) -> str:
     except Exception as e:
         st.error(f"感情反転中にエラーが発生しました: {str(e)}")
         return text
+
+def determine_sentiment(results: Dict[str, float]) -> str:
+    positive_emotions = ['Joy', 'Anticipation', 'Trust', 'Surprise']
+    negative_emotions = ['Sadness', 'Anger', 'Fear', 'Disgust']
+    
+    positive_score = sum(results[emotion] for emotion in positive_emotions)
+    negative_score = sum(results[emotion] for emotion in negative_emotions) 
+    
+    if positive_score > negative_score:
+        return "ポジティブ"
+    elif negative_score > positive_score:
+        return "ネガティブ"
+    else:
+        return "ニュートラル"
 
 def main():
     st.title('感情分析・感情反転アプリケーション')
@@ -104,6 +115,10 @@ def main():
             if fig:
                 st.pyplot(fig)
                 plt.close(fig)
+            
+            # ポジティブ・ネガティブ判定
+            sentiment = determine_sentiment(results)
+            st.write(f'### 判定結果: **{sentiment}**')
         
         # 感情反転
         if openai.api_key:
@@ -124,6 +139,10 @@ def main():
                 if reversed_fig:
                     st.pyplot(reversed_fig)
                     plt.close(reversed_fig)
+                
+                # 感情反転後のポジティブ・ネガティブ判定
+                reversed_sentiment = determine_sentiment(reversed_results)
+                st.write(f'### 感情反転後の判定結果: **{reversed_sentiment}**')
 
 if __name__ == "__main__":
     main()
