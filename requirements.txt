@@ -8,3 +8,4 @@ transformers
 typing-extensions
 fugashi
 unidic-lite
+openai==0.28
